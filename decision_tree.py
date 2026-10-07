@@ -15,25 +15,24 @@ from sklearn.metrics import (
     ConfusionMatrixDisplay,
 )
 
-# ── 1. Load Data ──────────────────────────────────────────────────────────────
 df = pd.read_csv("bank-full.csv", sep=";")
 print(f"Dataset shape: {df.shape}")
 print(f"Target distribution:\n{df['y'].value_counts()}\n")
 
-# ── 2. Features & Target ──────────────────────────────────────────────────────
+
 X = df.drop("y", axis=1)
 y = (df["y"] == "yes").astype(int)
 
 cat_cols = X.select_dtypes(include="object").columns.tolist()
 num_cols = [c for c in X.columns if c not in cat_cols]
 
-# ── 3. Preprocessor ───────────────────────────────────────────────────────────
+
 preprocessor = ColumnTransformer([
     ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), cat_cols),
     ("num", "passthrough", num_cols),
 ])
 
-# ── 4. Pipeline ───────────────────────────────────────────────────────────────
+
 model = DecisionTreeClassifier(max_depth=5, random_state=42, class_weight="balanced")
 
 pipeline = Pipeline([
@@ -41,7 +40,7 @@ pipeline = Pipeline([
     ("model", model),
 ])
 
-# ── 5. Train / Test Split ─────────────────────────────────────────────────────
+
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
@@ -49,13 +48,12 @@ X_train, X_test, y_train, y_test = train_test_split(
 pipeline.fit(X_train, y_train)
 pred = pipeline.predict(X_test)
 
-# ── 6. Metrics ────────────────────────────────────────────────────────────────
 print("=" * 50)
 print(f"Accuracy : {accuracy_score(y_test, pred):.4f}")
 print("=" * 50)
 print(classification_report(y_test, pred, target_names=["No", "Yes"]))
 
-# ── 7. Get Feature Names (readable) ──────────────────────────────────────────
+
 ohe_features = (
     pipeline.named_steps["preprocess"]
     .named_transformers_["cat"]
@@ -64,7 +62,6 @@ ohe_features = (
 )
 all_feature_names = ohe_features + num_cols
 
-# ── 8. Decision Tree Visualization (Depth=3 for readability) ─────────────────
 fig, ax = plt.subplots(figsize=(28, 10))
 plot_tree(
     pipeline.named_steps["model"],
@@ -82,7 +79,7 @@ plt.savefig("Decision_Tree_Visualization.png", dpi=150, bbox_inches="tight")
 plt.close()
 print("Tree visualization saved → Decision_Tree_Visualization.png")
 
-# ── 9. Confusion Matrix ───────────────────────────────────────────────────────
+
 cm = confusion_matrix(y_test, pred)
 disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["No", "Yes"])
 fig2, ax2 = plt.subplots(figsize=(6, 5))
@@ -93,7 +90,7 @@ plt.savefig("Confusion_Matrix.png", dpi=150, bbox_inches="tight")
 plt.close()
 print("Confusion matrix saved  → Confusion_Matrix.png")
 
-# ── 10. Text Rules (Top 3 levels) ─────────────────────────────────────────────
+
 rules = export_text(
     pipeline.named_steps["model"],
     feature_names=all_feature_names,
